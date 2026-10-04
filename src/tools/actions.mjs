@@ -432,7 +432,12 @@ export function createSetupActions(config, logger, overrides = {}) {
         ffprobe: {
           path: ffprobe === null ? null : ffprobe.path,
           source: ffprobe === null ? null : ffprobe.source,
-          candidates: ffprobeCandidates(config.ffprobePath).map((candidate) => ({ path: candidate.path, source: candidate.source })),
+          available: ffprobe !== null,
+          candidates: ffprobeCandidates(config.ffprobePath).map((candidate) => ({
+            path: candidate.path,
+            source: candidate.source,
+            found: candidate.found,
+          })),
           note: 'ffprobe 只用来核对写出的文件有多长；没有它，不报时长的引擎无法做对话排版。',
         },
         config: {

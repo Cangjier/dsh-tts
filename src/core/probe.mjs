@@ -20,7 +20,7 @@
  */
 import { execFile } from 'node:child_process'
 import { existsSync } from 'node:fs'
-import { dirname, join, resolve } from 'node:path'
+import { delimiter, dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 /** This plugin's root directory, derived from this file's location. */
@@ -36,43 +36,74 @@ const SIBLING_VENDOR_DIRS = [
 ]
 
 /**
+ * Find an executable on `PATH`.
+ *
+ * A bare name is not evidence that a program exists, and this module used to return `ffprobe` as
+ * the last resort without ever checking — so a checkout with no vendored build (a fresh clone, with
+ * no sibling repositories beside it) reported `source: "PATH"` on a machine where ffprobe was not
+ * installed at all. The claim was then contradicted by a spawn failure several calls later, which
+ * is the worst order for a wrong answer to arrive in.
+ *
+ * `PATHEXT` is honoured on Windows, because a program is found there as `ffprobe.exe`; anything
+ * else is looked up under the exact name.
+ *
+ * @param {string} name - the program name without an extension.
+ * @returns {string|null} the absolute path, or null when nothing on `PATH` matches.
+ */
+export function findOnPath(name) {
+  const extensions =
+    process.platform === 'win32'
+      ? (process.env.PATHEXT ?? '.COM;.EXE;.BAT;.CMD').split(';').filter((extension) => extension !== '')
+      : ['']
+  for (const directory of String(process.env.PATH ?? '').split(delimiter)) {
+    if (directory.trim() === '') continue
+    for (const extension of extensions) {
+      const candidate = join(directory, `${name}${extension.toLowerCase()}`)
+      if (existsSync(candidate)) return candidate
+    }
+  }
+  return null
+}
+
+/**
  * The candidate paths for ffprobe, in the order they are tried.
  *
  * Exported so `tts_setup {action:"status"}` can show the whole list rather than only the winner:
- * when nothing is found, what was looked for is the useful part.
+ * when nothing is found, what was looked for is the useful part. The `PATH` entry reports whether
+ * it actually resolved (`found`), so the list distinguishes "not there" from "not looked for".
  *
  * @param {string|null} configured - `config.ffprobePath`.
- * @returns {{path: string, source: string}[]} the candidates.
+ * @returns {{path: string, source: string, found: boolean}[]} the candidates.
  */
 export function ffprobeCandidates(configured = null) {
   const candidates = []
   if (typeof configured === 'string' && configured !== '') {
-    candidates.push({ path: resolve(configured), source: 'config.ffprobePath' })
+    const path = resolve(configured)
+    candidates.push({ path, source: 'config.ffprobePath', found: existsSync(path) })
   }
-  candidates.push({ path: join(PLUGIN_ROOT, 'vendor', 'ffmpeg', 'bin', process.platform === 'win32' ? 'ffprobe.exe' : 'ffprobe'), source: 'dsh-tts/vendor' })
+  const executable = process.platform === 'win32' ? 'ffprobe.exe' : 'ffprobe'
+  candidates.push({ path: join(PLUGIN_ROOT, 'vendor', 'ffmpeg', 'bin', executable), source: 'dsh-tts/vendor', found: false })
   for (const parts of SIBLING_VENDOR_DIRS) {
     candidates.push({
-      path: join(SIBLINGS_ROOT, ...parts, process.platform === 'win32' ? 'ffprobe.exe' : 'ffprobe'),
+      path: join(SIBLINGS_ROOT, ...parts, executable),
       source: `sibling ${parts[0]}/vendor`,
+      found: false,
     })
   }
-  candidates.push({ path: 'ffprobe', source: 'PATH' })
-  return candidates
+  const onPath = findOnPath('ffprobe')
+  candidates.push({ path: onPath ?? 'ffprobe', source: 'PATH', found: onPath !== null })
+  return candidates.map((candidate) => ({ ...candidate, found: candidate.found || existsSync(candidate.path) }))
 }
 
 /**
  * The first ffprobe that exists.
+ *
  * @param {string|null} configured - `config.ffprobePath`.
  * @returns {{path: string, source: string}|null} the binary and where it came from, or null.
  */
 export function findFfprobe(configured = null) {
   for (const candidate of ffprobeCandidates(configured)) {
-    if (candidate.source === 'PATH') {
-      // A bare name cannot be tested with existsSync; report it as the last resort and let the
-      // spawn decide. Callers treat a failure as "no ffprobe", which is the same outcome.
-      return candidate
-    }
-    if (existsSync(candidate.path)) return candidate
+    if (candidate.found) return { path: candidate.path, source: candidate.source }
   }
   return null
 }
