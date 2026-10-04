@@ -1,0 +1,35 @@
+{
+  "name": "dsh-tts",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DSH 插件：把文字变成声音。provider 可插拔（Edge 朗读 / 任意本地 CLI 引擎），一次合成同时给出音频与逐词时间戳；多人脚本按采样级偏移排成一条时间线。只产出文件与数字，不出判断。",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": "./index.mjs",
+    "./core": "./src/core/index.mjs",
+    "./package.json": "./package.json",
+    "./cordis.patch.yml": "./cordis.patch.yml"
+  },
+  "files": [
+    "index.mjs",
+    "src",
+    "cordis.patch.yml",
+    "docs",
+    "README.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test \"tests/*.test.mjs\"",
+    "check": "node --check index.mjs",
+    "surface": "node src/bin/surface-report.mjs",
+    "doctor": "node src/bin/tts.mjs doctor"
+  }
+}

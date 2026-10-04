@@ -1,0 +1,51 @@
+# dsh-tts bundle patch.
+#
+# 它只贡献一行，且不依赖任何特定 composition：
+#
+#   dsh-tts  Host 插件：注册 `tts_*` 工具（tts_speak / tts_setup / tts_guide）。
+#            需要 `tools` 服务，在挂载了 @deepseek-ai/dsh-tools 的任何 profile 里都安全。
+#
+# 两类 provider：
+#   - edge（默认）：微软 Edge「大声朗读」端点。不需要任何 Key，一次合成同时返回音频与
+#     逐词时间戳（WordBoundary）。需要网络；商用授权未明确，见 README「许可」一节。
+#   - command：把任意本地 TTS 命令行接进来（Piper / Kokoro / GPT-SoVITS / 自写脚本）。
+#     只认「模板 + 占位符」，不认任何具体引擎，所以引擎换代不用改插件。
+#     这类 provider 不给逐词时间戳，speak 会明确报 timings:"none"。
+#
+# 没有任何必填项：不配 command 也能用 edge；没有网络时 status / voices(command) 仍可用。
+
+- insert:
+    - id: dsh-tts
+      name: 'dsh-tts'
+      config:
+        # 工作目录基准。null = 调用方给的 cwd → 进程工作目录。
+        projectRoot: null
+
+        # 默认输出目录。null = <cwd>/tts。
+        outDir: null
+
+        # 默认 provider。null = DSH_TTS_PROVIDER → "edge"。
+        provider: null
+
+        # 音频时长核对用的 ffprobe。null = DSH_TTS_FFPROBE → 本插件 vendor → 同级
+        # dsh-video-audio / video-factory 的 vendor/ffmpeg/bin → PATH。
+        ffprobePath: null
+
+        edge:
+          # 音色短名。null = DSH_TTS_VOICE → "zh-CN-XiaoxiaoNeural"。
+          voice: null
+          rate: null # 如 "+10%" / "-15%"
+          pitch: null # 如 "-2Hz"
+          volume: null # 如 "+0%"
+          timeoutMs: 60000
+
+        # 本地命令行引擎。null = 未配置，command provider 会明确报告自己不可用。
+        command: null
+        # command:
+        #   path: 'C:/tools/piper/piper.exe'
+        #   args: ['--model', 'C:/tools/piper/zh_CN-huayan-medium.onnx', '--output_file', '{out}']
+        #   textMode: 'stdin'        # stdin | arg | file
+        #   outFormat: 'wav'         # wav | mp3
+        #   voice: null              # 传给 {voice} 的值
+        #   voices: ['zh_CN-huayan-medium']
+        #   timeoutMs: 120000

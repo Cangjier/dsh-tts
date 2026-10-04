@@ -1,0 +1,13 @@
+# 产物与临时目录
+out/
+tts/
+narration/
+podcast/
+
+# 引擎与模型由使用方自己装，不进仓库
+vendor/
+node_modules/
+
+# 事故记录里那条 PowerShell 教训的工具化提醒：
+# 需要原地改写本仓库的文本文件时，用 Node 脚本（scripts/）而不是 Get-Content -Raw | Set-Content。
+*.tmp

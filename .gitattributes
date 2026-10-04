@@ -1,0 +1,20 @@
+# Line endings are normalised to LF in the repository, with the deliberate exception below.
+* text=auto eol=lf
+
+# A Windows PowerShell 5.1 script works with LF, but CRLF is what a Windows-only script should be
+# checked out as. There is one such script here (scripts/replace-in-file.mjs is Node, not
+# PowerShell): the rule is kept so a future one is not a surprise.
+*.ps1 text eol=crlf
+
+# Any media that ends up committed stays byte-for-byte. The .gitignore keeps generated audio out of
+# the repository; this rule covers the case where a fixture is deliberately added.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.mp4 binary
+*.mp3 binary
+*.wav binary
+*.zip binary
+*.7z binary
+*.exe binary
+*.onnx binary
