@@ -52,7 +52,10 @@ test('the candidate list ends with a PATH entry that says whether it resolved', 
   assert.equal(typeof candidates[candidates.length - 1].found, 'boolean')
   // Every candidate carries the flag, so a report can show what was looked for and what was there.
   assert.equal(candidates.every((candidate) => typeof candidate.found === 'boolean'), true)
-  assert.deepEqual(candidates.map((candidate) => candidate.source).slice(0, 3), [
+  // The shared plugin home first — that is where the family installs one ffmpeg — then the
+  // layouts that existed before it.
+  assert.deepEqual(candidates.map((candidate) => candidate.source).slice(0, 4), [
+    'shared-home',
     'dsh-tts/vendor',
     'sibling dsh-video-audio/vendor',
     'sibling video-factory/vendor',

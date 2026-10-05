@@ -10,7 +10,8 @@
  * The discovery order is the one the sibling audio plugin uses, so a machine that is already
  * rendering video does not download a second ffmpeg:
  *
- *   config.ffprobePath → DSH_TTS_FFPROBE (folded into that field) → this plugin's
+ *   config.ffprobePath → DSH_TTS_FFPROBE (folded into that field) → **the shared plugin home**
+ *   (`~/.dsh-plugins/ffmpeg/bin`, where the family installs one build) → this plugin's
  *   vendor/ffmpeg/bin → a sibling dsh-video-audio checkout → a sibling video-factory checkout →
  *   PATH
  *
@@ -22,6 +23,7 @@ import { execFile } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { delimiter, dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { SHARED_FFMPEG_BIN, sharedHomeState } from './home.mjs'
 
 /** This plugin's root directory, derived from this file's location. */
 export const PLUGIN_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..')
@@ -82,6 +84,7 @@ export function ffprobeCandidates(configured = null) {
     candidates.push({ path, source: 'config.ffprobePath', found: existsSync(path) })
   }
   const executable = process.platform === 'win32' ? 'ffprobe.exe' : 'ffprobe'
+  candidates.push({ path: join(SHARED_FFMPEG_BIN, executable), source: 'shared-home', found: false })
   candidates.push({ path: join(PLUGIN_ROOT, 'vendor', 'ffmpeg', 'bin', executable), source: 'dsh-tts/vendor', found: false })
   for (const parts of SIBLING_VENDOR_DIRS) {
     candidates.push({
@@ -93,6 +96,14 @@ export function ffprobeCandidates(configured = null) {
   const onPath = findOnPath('ffprobe')
   candidates.push({ path: onPath ?? 'ffprobe', source: 'PATH', found: onPath !== null })
   return candidates.map((candidate) => ({ ...candidate, found: candidate.found || existsSync(candidate.path) }))
+}
+
+/**
+ * Where the shared dependency directory is, and where its ffmpeg would be.
+ * @returns {object} the root, the rule that produced it, and the binary directory inside it.
+ */
+export function sharedFfmpegState() {
+  return { ...sharedHomeState(), ffmpegBin: SHARED_FFMPEG_BIN }
 }
 
 /**

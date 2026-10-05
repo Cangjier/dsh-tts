@@ -44,4 +44,20 @@ export {
   writeSpeech,
 } from './output.mjs'
 export { dialogueDocument, parseScript, planTimeline, verifyClips } from './dialogue.mjs'
-export { PLUGIN_ROOT, SIBLINGS_ROOT, ffprobeCandidates, findFfprobe, probeDurationSeconds } from './probe.mjs'
+export { PLUGIN_ROOT, SIBLINGS_ROOT, ffprobeCandidates, findFfprobe, probeDurationSeconds, sharedFfmpegState } from './probe.mjs'
+export {
+  HOME_DIR_NAME,
+  HOME_ENV,
+  SHARED_FFMPEG_BIN,
+  SHARED_FFMPEG_DIR,
+  SHARED_LIB_DIR,
+  SHARED_MATTE_DIR,
+  SHARED_MODELS_DIR,
+  SHARED_OCR_DIR,
+  SHARED_ROOT,
+  SHARED_RUNTIME_DIR,
+  SHARED_YAMNET_DIR,
+  binaryName,
+  sharedHomeState,
+  sharedPath,
+} from './home.mjs'
